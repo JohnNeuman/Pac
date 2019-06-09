@@ -1,22 +1,24 @@
 <!doctype html>
 <html>
-    <head>
-    
-    </head>
-    <body>
-        <div id = 'd1' style = "position:absolute; top: 0px; left: 0px; z-index:1">
-            <canvas id = "ctx1" width = window.innerWidth height = window.innerHeight> </canvas>
-        </div>
-        <div id = 'd2' style = "position:absolute; top: 0px; left: 0px; z-index:2">
-            <canvas id = "ctx2" width = window.innerWidth height = window.innerHeight> </canvas>
-        </div>
-        <div id = 'd3' style = "position:absolute; top: 0px; left: 0px; z-index:3">
-            <canvas id = "ctx3" width = window.innerWidth height = window.innerHeight> </canvas>
-        </div>
-        <script>
-        
+
+<head>
+
+</head>
+
+<body>
+    <div id='d1' style="position:absolute; top: 0px; left: 0px; z-index:1">
+        <canvas id="ctx1" width=window.innerWidth height=window.innerHeight> </canvas>
+    </div>
+    <div id='d2' style="position:absolute; top: 0px; left: 0px; z-index:2">
+        <canvas id="ctx2" width=window.innerWidth height=window.innerHeight> </canvas>
+    </div>
+    <div id='d3' style="position:absolute; top: 0px; left: 0px; z-index:3">
+        <canvas id="ctx3" width=window.innerWidth height=window.innerHeight> </canvas>
+    </div>
+    <script>
+
         class Pac {
-            constructor(x,y,direction,color,state,r) {
+            constructor(x, y, direction, color, state, r) {
                 this.x = x;
                 this.y = y;
                 this.direction = direction;
@@ -25,822 +27,768 @@
                 this.r = r;
             }
         }
-        
+
         class Ghost {
-            constructor(x,y,direction,color,r) {
+            constructor(x, y, block_x, block_y, ghost_step, state, direction, color, r) {
                 this.x = x;
                 this.y = y;
+                this.block_x = block_x;
+                this.block_y = block_y;
+                this.ghost_step = ghost_step;
+                this.state = state;
                 this.direction = direction;
                 this.prev_direction = direction;
                 this.color = color;
                 this.r = r;
             }
         }
-            
-        let x, y, count = 0, range = 0;
-        let coord;
-        var state = "open";
-        var step, ghost_step; 
-        var micro_step;
-        let curr_direction = "up";
-        let obj;
-        let game;
-        let r, a;
-        if (window.innerWidth > window.innerHeight) {
-            r = (window.innerWidth - 10) / 60;
-            a = 1.2*r;
-            y = (window.innerHeight - 10) - 1.2*a;
-            x = (window.innerWidth - 10) / 2;
-            step = (window.innerWidth - 10) * 0.006;	
-        } else {
-            r = (window.innerHeight - 10) / 60;
-            a = 1.2*r;
-            y = (window.innerHeight - 10) - 1.2*a;
-            x = (window.innerWidth - 10) / 2;
-            step = (window.innerHeight - 10) * 0.006;
-        }
-        ghost_step = 3*(step) / 5;
-        pac = new Pac(x,y,"up","yellow","open",r);
-        red_Ghost = new Ghost(24*a,9*a,"left","red",r);
-        blue_Ghost = new Ghost(27*a,9*a,"right","blue",r);
-        brown_Ghost = new Ghost(24*a,12*a,"left","Sienna",r);
-        violet_Ghost = new Ghost(27*a,12*a,"right","DarkOrchid",r);
-            
-        let map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                   [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,0,0],
-                   [0,0,1,2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,2,0,1,0,0],
-                   [0,0,1,2,0,1,1,1,1,1,1,2,0,1,1,1,1,2,0,1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,1,2,0,1,1,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,2,2,2,2,2,2,2,0,1,2,2,2,2,2,0,1,0,0],
-                   [0,0,1,2,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,1,2,0,0,0,0,2,0,0,1,2,0,0,0,2,0,1,0,0],
-                   [0,0,1,2,0,1,1,1,1,1,1,1,1,1,2,0,1,2,0,1,2,0,1,1,1,1,1,1,1,2,0,1,2,0,1,1,1,2,0,1,1,2,0,1,1,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,0,1,2,0,1,2,0,0,0,0,1,0,0,0,2,2,2,2,2,2,0,1,2,2,2,2,2,2,0,1,2,0,1,0,0],
-                   [0,0,1,2,0,0,0,0,2,0,0,2,0,0,2,0,1,2,0,1,2,0,0,0,0,1,0,0,0,2,0,0,0,0,2,0,1,2,0,0,0,0,2,2,2,2,0,1,0,0],
-                   [0,0,1,2,0,1,1,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,1,1,1,1,1,1,2,0,1,1,1,2,0,1,2,0,1,1,1,2,0,0,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,0,1,2,0,1,2,0,1,2,0,1,2,0,0,0,0,1,0,0,0,2,0,1,2,2,2,0,1,2,2,2,2,2,2,0,1,2,0,1,0,0],
-		   [0,0,1,2,0,0,0,0,2,0,1,2,0,1,2,0,1,2,0,1,2,0,0,0,0,1,0,0,0,2,2,2,2,0,0,0,1,2,0,0,0,0,2,2,2,2,0,1,0,0],
-                   [0,0,1,2,0,1,1,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,1,1,1,1,1,1,2,0,0,2,0,1,1,1,2,0,1,1,1,2,0,0,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,2,2,2,2,2,2,2,2,2,2,0,1,2,2,2,2,2,2,0,1,2,2,2,0,1,2,0,1,0,0],
-                   [0,0,1,2,0,0,0,0,0,2,0,0,0,0,2,0,0,2,0,1,0,0,0,0,2,0,0,0,0,0,0,1,2,0,0,0,0,2,0,1,2,0,0,0,1,2,0,1,0,0],
-                   [0,0,1,2,0,1,1,1,1,2,0,1,1,1,2,0,1,2,0,1,1,1,1,1,2,0,1,1,1,1,1,1,2,0,1,1,1,2,0,1,2,0,1,1,1,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,2,2,2,2,2,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,0,0],
-                   [0,0,1,2,0,0,0,0,0,2,0,0,0,0,2,0,0,0,0,0,0,2,0,1,0,0,0,0,2,0,1,2,0,0,2,0,0,0,0,0,0,2,0,0,0,2,0,1,0,0],
-		   [0,0,1,2,0,1,1,1,1,2,0,1,1,1,2,0,1,1,1,1,1,2,0,1,1,1,1,1,2,0,1,2,0,1,2,0,1,1,1,1,1,2,0,1,1,2,0,1,0,0],
-                   [0,0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,1,2,2,2,2,2,2,2,2,2,2,2,2,0,1,0,0],
-                   [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
-                   [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-                   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
+
+        let x, y, r, count, range, coord, state, step, ghost_step, micro_step, curr_direction, obj, game, a, ghost_r, pac_r, ctx1, ctx2, ctx3, animationID;
         
-        function get_block_coord(i,j,a) {
-            return {x1: j*a, y1: i*a,x2: j*a+a, y2: i*a+a};
+        let map = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 0, 0, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],
+        
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 0, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 1, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 1, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 2, 0, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 0, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 0, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 2, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 0, 1, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],
+        [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+
+        function get_block_coord(i, j, a) {
+            return { x1: j * a, y1: i * a, x2: j * a + a, y2: i * a + a };
         }
-            
-        function draw_block(ctx,x,y,color) {
+
+        function get_ghost_block(ghost_obj, map, a) {
+            let block_coords;
+            for(let i = 0; i < map.length; i++){
+                for(let j = 0; j < map[0].length; j++){
+                    block_coords = get_block_coord(i, j, a);
+                    if ((ghost_obj.x == block_coords.x1) && (ghost_obj.y == block_coords.y1)) {
+                        return {block_x: j, block_y: i};
+                    }
+                }
+            }
+        }
+
+        function draw_block(ctx, x, y, color) {
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.fillStyle = color;
-            x += 0;
-            y += 0;
             ctx.rect(x, y, a, a);
             ctx.stroke();
             ctx.fill();
-        }  
-        function draw_circle(x,y,r,color,ctx) {
+        }
+        function draw_circle(x, y, r, color, ctx) {
             ctx.beginPath();
             ctx.fillStyle = color;
             if (color == "black") {
-                ctx.arc(x + a,y + a,r/2 + 1,0,2*Math.PI);
+                ctx.arc(x + a, y + a, r / 2 + 1, 0, 2 * Math.PI);
             } else {
-                ctx.arc(x + a,y + a,r/2,0,2*Math.PI);
+                ctx.arc(x + a, y + a, r / 2, 0, 2 * Math.PI);
             }
             ctx.fill();
         }
-            
+
         function draw_map(ctx, map) {
             ctx.beginPath();
-            for(let i = 0; i < map.length; i++) {
-                for(let j = 0; j < map[i].length; j++) {
+            for (let i = 0; i < map.length; i++) {
+                for (let j = 0; j < map[i].length; j++) {
                     if (map[i][j] == 1) {
-                        draw_block(ctx,a*j,a*i, "green");
+                        draw_block(ctx, a * j, a * i, "green");
                     } else if (map[i][j] == 2) {
-                        draw_circle(a*j,a*i,r,"IndianRed",ctx);
+                        draw_circle(a * j, a * i, r, "IndianRed", ctx);
                     }
                 }
             }
             return ctx;
         }
-        
-        function check_ghost_pos(ghost,a) {
-            let coord,x,y;
-            for(let i = 0; i < map.length; i++) {
-                for(let j = 0; j < map[0].length; j++) {
+
+        function check_ghost_pos(ghost, step, a) {
+            let coord, x, y;
+            for (let i = 0; i < map.length; i++) {
+                for (let j = 0; j < map[0].length; j++) {
                     if (map[i][j] == 1) {
-                        coord = get_block_coord(i,j,a);
-                    
-                        //point 11
-                    
-                        //block in ghost
-                        if ((coord.x1 >= (ghost.x - ghost.r))&&(coord.x1 <= (ghost.x + ghost.r))&&(coord.y1 >= (ghost.y - ghost.r))&&(coord.y1 <= (ghost.y + ghost.r))) {
+                        coord = get_block_coord(i, j, a);
+                        if (((ghost.x + ghost.r - step) <= coord.x1) && ((ghost.x + ghost.r) >= coord.x1) && ((Math.abs(ghost.y - coord.y1) <= ghost.r) || (Math.abs(ghost.y - coord.y2) <= ghost.r))) {
                             return true;
                         }
-                        //ghost in block
-                        if (((ghost.x - ghost.r) >= coord.x1)&&((ghost.x - ghost.r) <= coord.x2)&&((ghost.y - ghost.r) >= coord.y1)&&((ghost.y - ghost.r) <= coord.y2)) {
+                        if (((Math.abs(ghost.x - coord.x1) <= ghost.r) || (Math.abs(ghost.x - coord.x2) <= ghost.r)) && ((ghost.y + ghost.r - step) <= coord.y1) && ((ghost.y + ghost.r) >= coord.y1)) {
                             return true;
                         }
-                    
-                        //point 12
-                        //block in ghost
-                        if ((coord.x2 >= (ghost.x - ghost.r))&&(coord.x2 <= (ghost.x + ghost.r))&&(coord.y1 >= (ghost.y - ghost.r))&&(coord.y1 <= (ghost.y + ghost.r))) {
+                        if (((ghost.x - ghost.r + step) >= coord.x2) && ((ghost.x - ghost.r) <= coord.x2) && ((Math.abs(ghost.y - coord.y1) <= ghost.r) || (Math.abs(ghost.y - coord.y2) <= ghost.r))) {
                             return true;
                         }
-                        //ghost in block
-                        if (((ghost.x + ghost.r) >= coord.x1)&&((ghost.x + ghost.r) <= coord.x2)&&((ghost.y - ghost.r) >= coord.y1)&&((ghost.y - ghost.r) <= coord.y2)) {
-                            return true;
-                        }
-                    
-                        //point 21
-                        //ghost in block
-                        if (((ghost.x - ghost.r) >= coord.x1)&&((ghost.x - ghost.r) <= coord.x2)&&((ghost.y + ghost.r) >= coord.y1)&&((ghost.y + ghost.r) <= coord.y2)) {
-                            return true;
-                        }
-                        //block in ghost
-                        if ((coord.x1 >= (ghost.x - ghost.r))&&(coord.x1 <= (ghost.x + ghost.r))&&(coord.y2 >= (ghost.y - ghost.r))&&(coord.y2 <= (ghost.y + ghost.r))) {
-                            return true;
-                        }
-                    
-                        //point 22
-                        //ghost in block
-                        if (((ghost.x + ghost.r) >= coord.x1)&&((ghost.x + ghost.r) <= coord.x2)&&((ghost.y + ghost.r) >= coord.y1)&&((ghost.y + ghost.r) <= coord.y2)) {
-                            return true;
-                        }
-                        //block in ghost
-                        if ((coord.x2 >= (ghost.x - ghost.r))&&(coord.x2 <= (ghost.x + ghost.r))&&(coord.y2 >= (ghost.y - ghost.r))&&(coord.y2 <= (ghost.y + ghost.r))) {
+                        if (((Math.abs(ghost.x - coord.x1) <= ghost.r) || (Math.abs(ghost.x - coord.x2) <= ghost.r)) && ((ghost.y - ghost.r + step) >= coord.y2) && ((ghost.y - ghost.r) <= coord.y2)) {
                             return true;
                         }
 
-                        if (ghost.y < 2*a + ghost.r) {
+                        if (ghost.y - ghost.r < 2 * a) {
                             return true;
                         }
-                    
-                        if (ghost.y > 21*a + ghost.r) {
-                            return true;
-                        }
-                    
-                    } else if (map[i][j] == 2) {
 
-                    }
+                        if (ghost.y + ghost.r > 21 * a + ghost.r) {
+                            return true;
+                        }
+                    } 
                 }
             }
+            return false;
         }
-        
+
         function draw_ghost(ghost, color, ctx) {
             let add = 1;
             ctx.beginPath();
             ctx.fillStyle = color;
-            ctx.arc(ghost.x,ghost.y,ghost.r,0,Math.PI,true);
-            ctx.rect(ghost.x - ghost.r,ghost.y,2*ghost.r,ghost.r/2);      
+            ctx.arc(ghost.x, ghost.y, ghost.r, 0, Math.PI, true);
+            ctx.rect(ghost.x - ghost.r, ghost.y, 2 * ghost.r, ghost.r / 2);
             ctx.fill();
-            
-            
-            ctx.moveTo(ghost.x - ghost.r, ghost.y + ghost.r/2);
-            ctx.lineTo(ghost.x - ghost.r + ghost.r/4, ghost.y + ghost.r);
-            ctx.lineTo(ghost.x - ghost.r + ghost.r/2, ghost.y + ghost.r/2);
-            ctx.lineTo(ghost.x - ghost.r + 3*ghost.r/4, ghost.y + ghost.r);
-            ctx.lineTo(ghost.x - ghost.r + ghost.r, ghost.y + ghost.r/2);
-            ctx.lineTo(ghost.x - ghost.r + 5*ghost.r/4,ghost.y + ghost.r);
-            ctx.lineTo(ghost.x - ghost.r + 3*ghost.r/2, ghost.y + ghost.r/2);
-            ctx.lineTo(ghost.x - ghost.r + 7*ghost.r/4, ghost.y + ghost.r);
-            ctx.lineTo(ghost.x - ghost.r + 2*ghost.r, ghost.y + ghost.r/2);
-            
-            ctx.fill();           
-            
+
+            ctx.moveTo(ghost.x - ghost.r, ghost.y + ghost.r / 2);
+            ctx.lineTo(ghost.x - ghost.r + ghost.r / 4, ghost.y + ghost.r);
+            ctx.lineTo(ghost.x - ghost.r + ghost.r / 2, ghost.y + ghost.r / 2);
+            ctx.lineTo(ghost.x - ghost.r + 3 * ghost.r / 4, ghost.y + ghost.r);
+            ctx.lineTo(ghost.x - ghost.r + ghost.r, ghost.y + ghost.r / 2);
+            ctx.lineTo(ghost.x - ghost.r + 5 * ghost.r / 4, ghost.y + ghost.r);
+            ctx.lineTo(ghost.x - ghost.r + 3 * ghost.r / 2, ghost.y + ghost.r / 2);
+            ctx.lineTo(ghost.x - ghost.r + 7 * ghost.r / 4, ghost.y + ghost.r);
+            ctx.lineTo(ghost.x - ghost.r + 2 * ghost.r, ghost.y + ghost.r / 2);
+
+            ctx.fill();
+
             ctx.beginPath();
             ctx.fillStyle = "white";
-            ctx.arc(ghost.x - 2*ghost.r/5, ghost.y, ghost.r/5, 0, 2*Math.PI);
-            ctx.arc(ghost.x + 2*ghost.r/5,ghost.y,ghost.r/5,0,2*Math.PI);
+            ctx.arc(ghost.x - 2 * ghost.r / 5, ghost.y, ghost.r / 5, 0, 2 * Math.PI);
+            ctx.arc(ghost.x + 2 * ghost.r / 5, ghost.y, ghost.r / 5, 0, 2 * Math.PI);
             ctx.fill();
-        
-            
+
             ctx.beginPath();
             ctx.fillStyle = "black";
-            ctx.arc(ghost.x - 2*ghost.r/5,ghost.y,ghost.r/10,0,2*Math.PI);
-            ctx.arc(ghost.x + 2*ghost.r/5,ghost.y,ghost.r/10,0,2*Math.PI);
-            ctx.fill();                
+            ctx.arc(ghost.x - 2 * ghost.r / 5, ghost.y, ghost.r / 10, 0, 2 * Math.PI);
+            ctx.arc(ghost.x + 2 * ghost.r / 5, ghost.y, ghost.r / 10, 0, 2 * Math.PI);
+            ctx.fill();
         }
-        
-        function clear_ghost(ghost, ctx) {           
-            ctx.clearRect(ghost.x - ghost.r - 1,ghost.y - ghost.r - 1, 2*ghost.r + 2, 2*ghost.r + 2);
+
+        function clear_ghost(ghost, ctx) {
+            ctx.clearRect(ghost.x - ghost.r - 1, ghost.y - ghost.r - 1, 2 * ghost.r + 2, 2 * ghost.r + 2);
         }
-        
-        function get_opposite_direct(direct) {
-            switch (direct) {
-                case "up": return "down";
-                case "down": return "up";
-                case "left": return "right";
-                case "right": return "left";
-            } 
-        }
-         
-        function get_direct(ghost,deadend,ctx) {
-            let d;
-            if (ghost.direction == "down") {
-                if (deadend) {
-                    if (ghost.direction == ghost.prev_direction) {
-                        d = Math.random();                     
-                        if (d < 0.5) {
-                            return "left";
-                        } else {
-                            draw_ghost(ghost,"black",ctx);
-                            return "right";
-                        }
+
+        function get_direct(ghost_obj) {
+            let r;
+            switch (ghost_obj.direction) {
+                case "left":
+                    if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) ||
+                        (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) ||
+                        (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y < 20))){
+                            
+                            if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) &&
+                                ((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))){
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else if (r <= 0.75) {
+                                        return "up";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else {
+                                        return "up";
+                                    }
+                            }   else if (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2) &&
+                                        ((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "up";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        ((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if ((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) {
+                                return "left";
+                            }   else if ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y > 2)) {
+                                return "up";
+                            }   else if ((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1)&&(map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20)) {
+                                return "down";
+                            }
+
                     } else {
-                        return get_opposite_direct(ghost.prev_direction);
-                    }
-                } else {
-                    d = Math.random();
-                    if (d > 0.8) {
-                        return "down";
-                    } else if (d > 0.5) {
-                       
-                        ghost.x += step;    
-                        if (!check_ghost_pos(ghost,a)) {
-                            ghost.x -= step;
-                            return "right";
-                        } else {
-                            ghost.x -= step;
-                            return "down";
-                        }
-                    } else {
-                        ghost.x -= step;
-                        if (!check_ghost_pos(ghost,a)) {
-                            ghost.x += step;
-                            return "left";
-                        } else {
-                            ghost.x += step;
-                            return "down";
-                        }
-                    }
-                    
-                }
-            } else if (ghost.direction == "left") {
-                if (deadend) {
-                    if (ghost.direction == ghost.prev_direction) {
-                        d = Math.random();
-                       
-                        if (d < 0.5) {
-                            return "down";
-                        } else {
-                            return "up";
-                        }
-                    } else {
-                        return get_opposite_direct(ghost.prev_direction);
-                    }
-                } else {
-                    d = Math.random();
-                    if (d > 0.8) {
-                        return "left";
-                    } else if (d > 0.5) {
-                        
-                        ghost.y += step;
-                        if (!check_ghost_pos(ghost,a)){
-                            ghost.y -= step;
-                            return "down"
-                        } else {
-                            ghost.y -= step;
-                            return "left";
-                        }
-                    } else {
-                        ghost.y -= step;
-                        if (!check_ghost_pos(ghost,a)){
-                            ghost.y += step;
-                            return "up"
-                        } else {
-                            ghost.y += step;
-                            return "left";
-                        }
-                    }
-                }
-                    
-                
-            } else if (ghost.direction == "right") {
-                if (deadend) {
-                    if (ghost.direction == ghost.prev_direction) {
-                        d = Math.random();
-                       
-                        if (d < 0.5) {
-                            return "down";
-                        } else {
-                            return "up";
-                        }
-                    } else {
-                        return get_opposite_direct(ghost.prev_direction);
-                    }
-                } else {
-                    d = Math.random();
-                    if (d > 0.8) {
                         return "right";
-                    } else if (d > 0.5) {
-                       
-                        ghost.y += step;
-                        if (!check_ghost_pos(ghost,a)){
-                            ghost.y -= step;
-                            return "down"
-                        } else {
-                            ghost.y -= step;
-                            return "right";
-                        }
-                    } else {
-                        ghost.y -= step;
-                        if (!check_ghost_pos(ghost,a)){
-                            ghost.y += step;
-                            return "up"
-                        } else {
-                            ghost.y += step;
-                            return "right";
-                        }
                     }
-                    
-                }
-            } else if (ghost.direction == "up") {
-                if (deadend) {
-                    if (ghost.direction == ghost.prev_direction) {
-                        d = Math.random();
-                        if (d < 0.5) {
-                            return "left";
-                        } else {
-                            return "right";
-                        }
+                case "up":
+                    if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) ||
+                        (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) ||
+                        ((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))){
+
+                            if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&& (ghost_obj.block_y > 2) &&
+                                ((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))){
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "up";
+                                    } else if (r <= 0.75) {
+                                        return "left";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else {
+                                        return "up";
+                                    }
+                            }   else if (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)) &&(ghost_obj.block_y > 2) &&
+                                        ((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "up";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        ((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if ((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) {
+                                    return "left";
+                            }   else if ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y > 2)) {
+                                    return "up";
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) {
+                                    return "right";
+                            }
+
                     } else {
-                        return get_opposite_direct(ghost.prev_direction);
+                        return "down";
                     }
-                } else {
-                     d = Math.random();
-                    if (d > 0.8) {
+                case "right":
+                    if ((((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y > 2)) ||
+                        (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) ||
+                        ((((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y < 20))){
+
+                            if (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)) &&(ghost_obj.block_y > 2) &&
+                            (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) &&
+                            (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))){
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "right";
+                                    } else if (r <= 0.75) {
+                                        return "up";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)) &&(ghost_obj.block_y > 2) &&
+                                        (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1)))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "right";
+                                    } else {
+                                        return "up";
+                                    }
+                            }   else if ((((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) &&
+                                        (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "right";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if (((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1)) &&(ghost_obj.block_y > 2) &&
+                                        (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "up";
+                                    } else {
+                                        return "down";
+                                    }
+                            }   else if ((map[ghost_obj.block_y - 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y - 1][ghost_obj.block_x + 1] != 1) && (ghost_obj.block_y > 2)) {
+                                    return "up";
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) {
+                                    return "right";
+                            }   else if ((((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1)))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    return "down";
+                            }
+
+                    } else {
+                        return "left";
+                    }
+                case "down":
+                    if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) ||
+                        (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) ||
+                        ((((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)))&&(ghost_obj.block_y < 20))){
+
+                            if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                            (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) &&
+                            (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1))&&(ghost_obj.block_y < 20))){
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "down";
+                                    } else if (r <= 0.75) {
+                                        return "left";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1)))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "left";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if ((((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) &&
+                                        (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20)))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "down";
+                                    } else {
+                                        return "right";
+                                    }
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) &&
+                                        (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20)))) {
+                                    r = Math.random();
+                                    if (r <= 0.5) {
+                                        return "down";
+                                    } else {
+                                        return "left";
+                                    }
+                            }   else if ((map[ghost_obj.block_y][ghost_obj.block_x - 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x - 1] != 1)) {
+                                    return "left";
+                            }   else if (((map[ghost_obj.block_y][ghost_obj.block_x + 1] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y][ghost_obj.block_x + 2] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 2] != 1))) {
+                                    return "right";
+                            }   else if (((map[ghost_obj.block_y + 1][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 1][ghost_obj.block_x + 1] != 1))&&((map[ghost_obj.block_y + 2][ghost_obj.block_x] != 1) && (map[ghost_obj.block_y + 2][ghost_obj.block_x + 1] != 1)&&(ghost_obj.block_y < 20))) {
+                                    return "down";
+                            }
+
+                    } else {
                         return "up";
-                    } else if (d > 0.5) {
-                        
-                        ghost.x += step;    
-                        if (!check_ghost_pos(ghost,a)) {
-                            ghost.x -= step;
-                            return "right";
-                        } else {
-                            ghost.x -= step;
-                            return "up";
-                        }
-                    } else {
-                        ghost.x -= step;
-                        if (!check_ghost_pos(ghost,a)) {
-                            ghost.x += step;
-                            return "left";
-                        } else {
-                            ghost.x += step;
-                            return "up";
-                        }
                     }
-                }
             }
         }
-        
-            
+
         function move_ghost(ghost_obj) {
-            
-            if (ghost_obj.direction == "down") {
-                clear_ghost(ghost_obj,ctx3);
-                ghost_obj.y += ghost_step;
-                if (!check_ghost_pos(ghost_obj,a)) {                   
-                    ghost_obj.prev_direction = ghost_obj.direction;
-                    draw_ghost(ghost_obj,ghost_obj.color,ctx3);
-                    if (ghosts_vs_pac(pac)) {
-                        clearInterval(animationID);
-                        game = false;
+            let block_indexes, block_coords;
+            if (ghosts_vs_pac(pac)) {
+                clearInterval(animationID);
+            }
+            if (ghost_obj.state == "movement") {
+                clear_ghost(ghost_obj, ctx3);
+                if (ghost_obj.direction == "left") {
+                    block_coords = get_block_coord(ghost_obj.block_y, ghost_obj.block_x - 1, a);
+                    if ((ghost_obj.x - block_coords.x2) >= ghost_obj.ghost_step) {
+                        ghost_obj.x -= ghost_obj.ghost_step;    
+                    } else {
+                        ghost_obj.x = block_coords.x2;
+                        ghost_obj.block_x -= 1;
+                        ghost_obj.prev_direction = ghost_obj.direction;
+                        ghost_obj.state = "get_direction";
                     }
-                    ghost_obj.direction = get_direct(ghost_obj,false,ctx3);
-                } else {
-                    ghost_obj.y -= ghost_step;
-                    ghost_obj.direction = get_direct(ghost_obj,true,ctx3);
+                    draw_ghost(ghost_obj, ghost_obj.color, ctx3);
+                } else if (ghost_obj.direction == "up") {
+                    block_coords = get_block_coord(ghost_obj.block_y - 1, ghost_obj.block_x, a);
+                    if ((ghost_obj.y - block_coords.y2) >= ghost_obj.ghost_step) {
+                        ghost_obj.y -= ghost_obj.ghost_step;
+                    } else {
+                        ghost_obj.y = block_coords.y2;
+                        ghost_obj.block_y -= 1;
+                        ghost_obj.prev_direction = ghost_obj.direction;
+                        ghost_obj.state = "get_direction";
+                    }
+                    draw_ghost(ghost_obj, ghost_obj.color, ctx3);
+                } else if (ghost_obj.direction == "right") {
+                    block_coords = get_block_coord(ghost_obj.block_y, ghost_obj.block_x + 1, a);
+                    if ((block_coords.x2 - ghost_obj.x) >= ghost_obj.ghost_step) {
+                        ghost_obj.x += ghost_obj.ghost_step;
+                    } else {
+                        ghost_obj.x = block_coords.x2;
+                        ghost_obj.block_x += 1;
+                        ghost_obj.prev_direction = ghost_obj.direction;
+                        ghost_obj.state = "get_direction";
+                    }
+                    draw_ghost(ghost_obj, ghost_obj.color, ctx3);
+                } else if (ghost_obj.direction == "down") {
+                    block_coords = get_block_coord(ghost_obj.block_y + 1, ghost_obj.block_x, a);
+                    if ((block_coords.y2 - ghost_obj.y) >= ghost_obj.ghost_step) {
+                        ghost_obj.y += ghost_obj.ghost_step;
+                    } else {
+                        ghost_obj.y = block_coords.y2;
+                        ghost_obj.block_y += 1;
+                        ghost_obj.prev_direction = ghost_obj.direction;
+                        ghost_obj.state = "get_direction";
+                    }
+                    draw_ghost(ghost_obj, ghost_obj.color, ctx3);
                 }
-            } else if (ghost_obj.direction == "left") {
-                clear_ghost(ghost_obj,ctx3);
-                ghost_obj.x -= ghost_step;
-                if (!check_ghost_pos(ghost_obj,a)) {
-                    ghost_obj.prev_direction = ghost_obj.direction;
-                    draw_ghost(ghost_obj,ghost_obj.color,ctx3);
-                    if (ghosts_vs_pac(pac)) {
-                        clearInterval(animationID);
-                        game = false;
+            } else if (ghost_obj.state == "get_direction") {
+                ghost_obj.direction = get_direct(ghost_obj);
+                ghost_obj.state = "movement";
+            }
+        }
+
+        function check_pac_pos(x, y, r, a, step, ctx) {
+            let x1, y1, coord;
+            for (let i = 0; i < map.length; i++) {
+                for (let j = 0; j < map[0].length; j++) {
+                    if (map[i][j] == 1) {
+                        coord = get_block_coord(i, j, a);
+
+                        if ((Math.floor(x + r - step) <= coord.x1 - 1) && (Math.floor(x + r) >= coord.x1 - 1) && ((Math.abs(Math.floor(y - coord.y1)) <= r) || (Math.abs(Math.floor(y - coord.y2)) <= r))) {
+                            return { bool: true, row: i, col: j };
+                        }
+                        if (((Math.abs(Math.floor(x - coord.x2)) <= r) || (Math.abs(Math.floor(x - coord.x1)) <= r)) && (Math.floor(y + r - step) <= coord.y1 - 1) && (Math.floor(y + r) >= coord.y1 - 1)) {
+                            return { bool: true, row: i, col: j };
+                        }
+                        if ((Math.floor(x - r + step) >= coord.x2 + 1) && (Math.floor(x - r) <= coord.x2 + 1) && ((Math.abs(Math.floor(y - coord.y2)) <= r) || (Math.abs(Math.floor(y - coord.y1)) <= r))) {
+                            return { bool: true, row: i, col: j };
+                        }
+                        if (((Math.abs(Math.floor(x - coord.x2)) <= r) || (Math.abs(Math.floor(x - coord.x1)) <= r)) && (Math.floor(y - r + step) >= coord.y2 + 1) && (Math.floor(y - r) <= coord.y2 + 1)) {
+                            return { bool: true, row: i, col: j };
+                        }
+                        
+                    } else if (map[i][j] == 2) {
+
+                        coord = get_block_coord(i, j, a);
+                        x1 = coord.x1 + a;
+                        y1 = coord.y1 + a;
+
+                        if (Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)) <= 3 * r / 2) {
+                            map[i][j] = 0;
+                            draw_circle(coord.x1, coord.y1, r, "black", ctx);
+                            win_check();
+                        }
+
                     }
-                    ghost_obj.direction = get_direct(ghost_obj,false,ctx3);
-                } else {
-                    ghost_obj.x += ghost_step;
-                    ghost_obj.direction = get_direct(ghost_obj,true,ctx3);                    
-                }
-            } else if (ghost_obj.direction == "right") {
-                clear_ghost(ghost_obj,ctx3);
-                ghost_obj.x += ghost_step;
-                if (!check_ghost_pos(ghost_obj,a)) {
-                    ghost_obj.prev_direction = ghost_obj.direction;
-                    draw_ghost(ghost_obj,ghost_obj.color,ctx3);
-                    if (ghosts_vs_pac(pac)) {
-                        clearInterval(animationID);
-                        game = false;
-                    }
-                    ghost_obj.direction = get_direct(ghost_obj,false,ctx3);
-                } else {
-                    ghost_obj.x -= ghost_step;
-                    ghost_obj.direction = get_direct(ghost_obj,true,ctx3);
-                }
-            } else if (ghost_obj.direction == "up") {
-                clear_ghost(ghost_obj,ctx3);
-                ghost_obj.y -= ghost_step;
-                if (!check_ghost_pos(ghost_obj,a)) {
-                    ghost_obj.prev_direction = ghost_obj.direction;
-                    draw_ghost(ghost_obj,ghost_obj.color,ctx3);
-                    if (ghosts_vs_pac(pac)) {
-                        clearInterval(animationID);
-                        game = false;
-                    }
-                    ghost_obj.direction = get_direct(ghost_obj,false,ctx3);
-                } else {
-                    ghost_obj.y += ghost_step;
-                    ghost_obj.direction = get_direct(ghost_obj,true,ctx3);
                 }
             }
-
-
+            return { bool: false, row: -1, col: -1 };
         }
-            
-        function check_pac_pos(x,y,r,a,ctx) {
-	       let coord;
-	       let x1,x2,y1,y2,x3,y3;
-	       for(let i = 0; i < map.length; i++) {
-               for(let j = 0; j < map[0].length; j++) {
-                   if (map[i][j] == 1) {
-                       coord = get_block_coord(i,j,a);		
-                       if ((((x + r) >= coord.x1) && ((x - r) <= coord.x1))&&((y + r >= coord.y1)&&(y - r <= coord.y2))) {
-                           y1 = (2*y + Math.sqrt(4*Math.pow(y,2) - 4*(Math.pow(coord.x1 - x,2) - Math.pow(r,2) + Math.pow(y,2))))/2;
-                           y2 = (2*y - Math.sqrt(4*Math.pow(y,2) - 4*(Math.pow(coord.x1 - x,2) - Math.pow(r,2) + Math.pow(y,2))))/2;
-                           if ((y1 >= coord.y1)&&(y1 <= coord.y2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                           if ((y2 >= coord.y1)&&(y2 <= coord.y2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                       }
-	
-                       if ((((y + r) >= coord.y1) && ((y - r) <= coord.y1))&&((x + r >= coord.x1)&&(x - r <= coord.x2))) {
-                           x1 = (2*x + Math.sqrt(4*Math.pow(x,2) - 4*(Math.pow(coord.y1 - y,2) - Math.pow(r,2) + Math.pow(x,2))))/2;
-                           x2 = (2*x - Math.sqrt(4*Math.pow(x,2) - 4*(Math.pow(coord.y1 - y,2) - Math.pow(r,2) + Math.pow(x,2))))/2;
-                           if ((x1 >= coord.x1)&&(x1 <= coord.x2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                           if ((x2 >= coord.x1)&&(x2 <= coord.x2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                       }
-		
-                       if ((((x + r) >= coord.x2) && ((x - r) <= coord.x2))&&((y + r >= coord.y1)&&(y - r <= coord.y2))) {	
-                           y1 = (2*y + Math.sqrt(4*Math.pow(y,2) - 4*(Math.pow(coord.x2 - x,2) - Math.pow(r,2) + Math.pow(y,2))))/2;
-                           y2 = (2*y - Math.sqrt(4*Math.pow(y,2) - 4*(Math.pow(coord.x2 - x,2) - Math.pow(r,2) + Math.pow(y,2))))/2;
-                           if ((y1 >= coord.y1)&&(y1 <= coord.y2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                           if ((y2 >= coord.y1)&&(y2 <= coord.y2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                       }
-		
-                       if ((((y + r) >= coord.y2) && ((y - r) <= coord.y2))&&((x + r >= coord.x1)&&(x - r <= coord.x2))) {
-                           x1 = (2*x + Math.sqrt(4*Math.pow(x,2) - 4*(Math.pow(coord.y2 - y,2) - Math.pow(r,2) + Math.pow(x,2))))/2;
-                           x2 = (2*x - Math.sqrt(4*Math.pow(x,2) - 4*(Math.pow(coord.y2 - y,2) - Math.pow(r,2) + Math.pow(x,2))))/2;
-                           if ((x1 >= coord.x1)&&(x1 <= coord.x2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                           if ((x2 >= coord.x1)&&(x2 <= coord.x2)) {
-                               return {bool: true, row: i, col: j};
-                           }
-                       }
 
-                   } else if (map[i][j] == 2) {
-            
-                       coord = get_block_coord(i,j,a);
-                       x3 = coord.x1 + a;
-                       y3 = coord.y1 + a;
-            
-                       if (Math.sqrt(Math.pow(x3 - x,2) + Math.pow(y3 - y,2)) <= 3*r/2) {
-                           map[i][j] = 0;
-                           draw_circle(coord.x1, coord.y1,r,"black", ctx);
-                           win_check();
-                       } 
-            
-                   }
-               }
-           }
-        return {bool: false, row: -1, col: -1};
-	}           
-            
-    function draw_pac(pac,color,state,ctx) {
+        function draw_pac(pac, color, ctx) {
             let region = new Path2D();
             let add = 1;
 
             ctx.beginPath();
 
-	        ctx.strokeStyle = color || pac.color;
+            ctx.strokeStyle = color || pac.color;
             ctx.strokeWidth = 10;
             ctx.lineWidth = 10;
             ctx.fillStyle = color || pac.color;
-            if (((pac.state == "open")||(state == "open"))&&(state != "close")) {
-                if (pac.direction == "right") {                   
-                    if (color != "black") {
-                        region.arc(pac.x,pac.y,pac.r,Math.PI/5, 9*Math.PI/5);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x + Math.cos(Math.PI/5)*pac.r,pac.y + Math.cos(3*Math.PI/10)*pac.r);
-                    } else {
-                        region.arc(pac.x,pac.y,pac.r + add,Math.PI/5, 9*Math.PI/5);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x + Math.cos(Math.PI/5)*(pac.r + add),pac.y + Math.cos(3*Math.PI/10)*(pac.r + add));
-                    }
-                    region.closePath();
+            if (pac.state == "open") {
+                if (pac.direction == "right") {
+                    region.arc(pac.x, pac.y, pac.r, Math.PI / 5, 9 * Math.PI / 5);
+                    region.lineTo(pac.x, pac.y);
+                    region.lineTo(pac.x + Math.cos(Math.PI / 5) * pac.r, pac.y + Math.cos(3 * Math.PI / 10) * pac.r);
+                    pac.state = "close";
 
-                    ctx.fill(region,'evenodd');
-                        
-                    if (color != "black") {
-                        pac.state = "close";
-                    }
-                    
                 } else if (pac.direction == "up") {
+                    region.arc(pac.x, pac.y, pac.r, -3 * Math.PI / 10, 13 * Math.PI / 10);
+                    region.lineTo(pac.x, pac.y);
+                    region.lineTo(pac.x + Math.cos(3 * Math.PI / 10) * pac.r, pac.y - Math.cos(Math.PI / 5) * pac.r);
+                    pac.state = "close";
 
-                    if (color != "black") {
-                        region.arc(pac.x,pac.y,pac.r,-3*Math.PI/10,13*Math.PI/10);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x+Math.cos(3*Math.PI/10)*pac.r,pac.y - Math.cos(Math.PI/5)*pac.r);
-                        region.closePath();
-                    } else {
-                        region.arc(pac.x,pac.y,pac.r+add,-3*Math.PI/10,13*Math.PI/10);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x+Math.cos(3*Math.PI/10)*(pac.r + add),pac.y - Math.cos(Math.PI/5)*(pac.r + add));
-                        region.closePath();
-                    }
-
-                    ctx.fill(region,'evenodd');
-                    if (color != "black") {
-                        pac.state = "close";
-                    } 
-                    
                 } else if (pac.direction == "left") {
-                    if (color != "black") {
-                        region.arc(pac.x,pac.y,pac.r,6*Math.PI/5, 4*Math.PI/5);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x - Math.cos(Math.PI/5)*pac.r, pac.y - Math.cos(3*Math.PI/10)*pac.r);
-                    } else {
-                        region.arc(pac.x,pac.y,pac.r + add,6*Math.PI/5, 4*Math.PI/5);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x - Math.cos(Math.PI/5)*(pac.r + add), pac.y - Math.cos(3*Math.PI/10)*(pac.r + add));
-                    }
-                    region.closePath();
-                    ctx.fill(region,'evenodd');
-                    if (color != "black") {
-                        pac.state = "close";
-                    }
+                    region.arc(pac.x, pac.y, pac.r, 6 * Math.PI / 5, 4 * Math.PI / 5);
+                    region.lineTo(pac.x, pac.y);
+                    region.lineTo(pac.x - Math.cos(Math.PI / 5) * pac.r, pac.y - Math.cos(3 * Math.PI / 10) * pac.r);
+                    pac.state = "close";
+
                 } else if (pac.direction == "down") {
-                    if (color != "black") {
-                        region.arc(pac.x,pac.y,pac.r,7*Math.PI/10, 3*Math.PI/10);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x - Math.cos(3*Math.PI/10)*pac.r,pac.y + Math.cos(Math.PI/5)*pac.r);
-                    } else {
-                        region.arc(pac.x,pac.y,pac.r + add,7*Math.PI/10, 3*Math.PI/10);
-                        region.lineTo(pac.x,pac.y);
-                        region.lineTo(pac.x - Math.cos(3*Math.PI/10)*(pac.r + add),pac.y + Math.cos(Math.PI/5)*(pac.r + add));
-                    }
-                    region.closePath();    
-                    ctx.fill(region,'evenodd');
-                    if (color != "black") {
-                        pac.state = "close";
-                    }
+                    region.arc(pac.x, pac.y, pac.r, 7 * Math.PI / 10, 3 * Math.PI / 10);
+                    region.lineTo(pac.x, pac.y);
+                    region.lineTo(pac.x - Math.cos(3 * Math.PI / 10) * pac.r, pac.y + Math.cos(Math.PI / 5) * pac.r);                  
+                    pac.state = "close";
+
                 }
             } else {
-                if (color != "black") {
-                    region.arc(pac.x,pac.y,pac.r,0, 2*Math.PI);
-                } else {
-                    region.arc(pac.x,pac.y,pac.r + add,0, 2*Math.PI);
-                }
-                region.closePath();
-                ctx.fill(region,'evenodd');
-                if (color != "black") {
-                    pac.state = "open";
-                }
-                count = 0;   
-            } 
-	       return pac;       
+                region.arc(pac.x, pac.y, pac.r, 0, 2 * Math.PI);
+                pac.state = "open";
+                count = 0;
+            }
+            ctx.fill(region, 'evenodd');
+            region.closePath();
+            return pac;
         }
-        
-        function ghost_vs_pac(pac,ghost) {
-            if ((Math.abs(pac.x - ghost.x) < 2*pac.r - 5) && (Math.abs(pac.y - ghost.y) < 2*pac.r - 5)) {
+
+        function ghost_vs_pac(pac, ghost) {
+            if ((Math.abs(pac.x - ghost.x) < ghost.r + pac.r - 10) && (Math.abs(pac.y - ghost.y) < ghost.r + pac.r - 10)) {
                 alert('game over!');
                 return true;
             } else {
                 return false;
             }
-        }    
-        
+        }
+
         function win_check() {
-            for(let i = 0; i < map.length; i++) {
-                for(let j = 0; j < map[0].length; j++) {
+            for (let i = 0; i < map.length; i++) {
+                for (let j = 0; j < map[0].length; j++) {
                     if (map[i][j] == 2) {
                         return false;
                     }
                 }
             }
-            alert('You win in the game!'); 
+            alert('You win in the game!');
             clearInterval(animationID);
             game = false;
             return true;
         }
-            
+
         function ghosts_vs_pac(pac) {
-            if (ghost_vs_pac(pac,red_Ghost)) {
+            if (ghost_vs_pac(pac, red_Ghost)) {
                 return true;
             }
-            if (ghost_vs_pac(pac,blue_Ghost)) {
+            
+            if (ghost_vs_pac(pac, blue_Ghost)) {
                 return true;
             }
-            if (ghost_vs_pac(pac,brown_Ghost)) {
+            if (ghost_vs_pac(pac, brown_Ghost)) {
                 return true;
             }
-            if (ghost_vs_pac(pac,violet_Ghost)) {
+            if (ghost_vs_pac(pac, violet_Ghost)) {
                 return true;
             }
+            
             return false;
         }
-            
-        function clear_pac(pac,ctx) {
-            if (pac.state == "open") {
-                draw_pac(pac,"black","close",ctx);
-            } else {
-                draw_pac(pac,"black","open",ctx);
-            }
+
+        function clear_pac(pac, ctx) {
+            ctx.fillStyle = "black";
+            ctx.strokeStyle = "black";
+            let region = new Path2D();
+            region.color = "black";
+            region.arc(pac.x, pac.y, pac.r + 1, 0, 2*Math.PI);
+            region.closePath();
+            ctx.fill(region, 'evenodd');
         }
-        
+
         function loop() {
             move_ghost(red_Ghost);
             move_ghost(blue_Ghost);
             move_ghost(brown_Ghost);
             move_ghost(violet_Ghost);
         }
+
+
+        function init() {
+            if (window.innerWidth > window.innerHeight) {
+                r = (window.innerWidth - 10) / 65;
+                pac_r = r;
+                a = 1.3*r;
+                y = (window.innerHeight - 10) - 1.205 * a;
+                x = (window.innerWidth - 10) / 2;
+                step = (window.innerWidth - 10) / 140;
+            } else {
+                r = (window.innerHeight - 10) / 60;
+                a = 1.2 * r;
+                y = (window.innerHeight - 10) - 1.2 * a;
+                x = (window.innerWidth - 10) / 2;
+                step = (window.innerHeight - 10) * 0.006;
+            }
+            ghost_step = 3 * (step) / 10;
+            ghost_r = a - 4;
+            state = "open";
+            curr_direction = "up";
+            pac = new Pac(x, y, "up", "yellow", "open", pac_r);
             
-        var ctx1 = document.getElementById("ctx1").getContext("2d");
-        ctx1.canvas.width = window.innerWidth - 10;
-        ctx1.canvas.height = window.innerHeight - 10;
-        ctx1.beginPath();
-        ctx1.fillStyle = "black";
-        ctx1.rect(0,0,window.innerWidth,window.innerHeight);
-        ctx1.fill();
+            red_Ghost = new Ghost(24 * a, 9 * a, 23, 8, ghost_step, "movement", "left", "red", ghost_r);
+            blue_Ghost = new Ghost(27 * a, 9 * a, 26, 8, ghost_step, "movement", "right", "blue", ghost_r);
+            brown_Ghost = new Ghost(24 * a, 12 * a, 23, 11, ghost_step, "movement", "left", "Sienna", ghost_r);
+            violet_Ghost = new Ghost(27 * a, 12 * a, 26, 11, ghost_step, "movement", "right", "DarkOrchid", ghost_r);
             
-        var ctx2 = document.getElementById("ctx2").getContext("2d");        
-        ctx2.canvas.width = window.innerWidth - 10;
-        ctx2.canvas.height = window.innerHeight - 10;
-        draw_map(ctx2,map);
-        
-        var ctx3 = document.getElementById("ctx3").getContext("2d");        
-        ctx3.canvas.width = window.innerWidth - 10;
-        ctx3.canvas.height = window.innerHeight - 10;
-        
-        game = true;
-        draw_pac(pac,"yellow","open",ctx2)
-        draw_ghost(red_Ghost,red_Ghost.color,ctx3);
+            count = 0;
+            range = 0;
             
-        var animationID = setInterval(loop, 1000.0/30.0);
-            
-        window.onkeydown = function(event) {
-        if (game) {
-           switch (event.keyCode) {
-               case 37:
-                   if ((pac.x - 70) > 0) {
-                        if ((pac.direction == "left") && (count >= range)) {
-                            count = 0;
-                            obj = check_pac_pos(pac.x - step,pac.y,pac.r,a,ctx2);
-                            if (!obj.bool) {
-                                clear_pac(pac, ctx2);
-                                pac.x -= step;
-                                pac = draw_pac(pac,null,null,ctx2);
-                            } else {
-                                coord = get_block_coord(obj.row,obj.col,a);
-                                if (map[obj.row][obj.col] == 2) {
-                                    if ((pac.y >= coord.y1) && (pac.y <= coord.y2)) {
-                                        micro_step = pac.x - coord.x2 - pac.r - 2;
-                                        clear_pac(pac, ctx2);
-                                        pac.x -= micro_step;
-                                        pac = draw_pac(pac,null,null,ctx2);
-                                    }
-                                } else if (map[obj.row][obj.col] == 2) {
-                                    
-                                }
-                            }
-                        }  else if (pac.direction != "left") {
-                            pac.direction = "left";
-                            count = 1;
-                        } else {
-                            count++;
-                        }
-                   }
-                   break;
-               case 38:
-                   if ((pac.y - 70) > 0) {
-                       if ((pac.direction == "up") && (count >= range)) {
-                           count = 0;
-                           obj = check_pac_pos(pac.x,pac.y - step,pac.r,a,ctx2);
-                           if (!obj.bool) {
-                               clear_pac(pac, ctx2);
-                               pac.y -= step;
-                               pac = draw_pac(pac,null,null,ctx2);
-                           } else {
-                                coord = get_block_coord(obj.row, obj.col);
-                                if (map[obj.row][obj.col] == 1) {
-                                    if ((pac.x >= coord.x1)&&(pac.x <= coord.x2)) {
-                                        micro_step = pac.y - coord.y2 - pac.r - 2;
-                                        clear_pac(pac, ctx2);
-                                        pac.y -= micro_step;
-                                        pac = draw_pac(pac,null,null,ctx2);
-                                    }
-                                } else if (map[obj.row][obj.col] == 2) {
-                                    draw_circle(coord.x1, coord.y1,r,"black",ctx2);
-                                    clear_pac(pac, ctx2);
-                                    pac.y -= step;
-                                    pac = draw_pac(pac,null,null,ctx2);                                  
-                                }
-                            }
-                        }  else if (pac.direction != "up") {
-                            pac.direction = "up";
-                            count = 1;
-                        } else {
-                            count++;
-                        }
-                   }
-                   break;
-               case 39:
-                   if ((pac.x + 70) < ctx2.canvas.width) {
-                       if ((pac.direction == "right") && (count >= range)) {
-                           count = 0;
-                           obj = check_pac_pos(pac.x + step,pac.y,pac.r,a,ctx2);
-                            if (!obj.bool) {
-                                clear_pac(pac, ctx2);
-                                pac.x += step;
-                                pac = draw_pac(pac,null,null,ctx2);
-                            } else {
-                                coord = get_block_coord(obj.row,obj.col);
-                                if (map[obj.row][obj.col] == 1) {
-                                if ((pac.y >= coord.y1)&&(pac.y <= coord.y2)) {
-                                    micro_step = coord.x1 - pac.r - pac.x + 2;
-                                    clear_pac(pac, ctx2);
-                                    pac.x += micro_step;
-                                    pac = draw_pac(pac,null,null,ctx2);
-                                }
-                                } else if (map[obj.row][obj.col] == 2) {
-                                    
-                                }
-                            }
-                        }  else if (pac.direction != "right") {
-                            pac.direction = "right";
-                            count = 1;
-                        } else {
-                            count++;
-                        }
-                   }
-                   break;
-               case 40:
-                   if ((pac.y + 70) < ctx2.canvas.height) {
-                       if ((pac.direction == "down") && (count >= range)) {
-                           count = 0;
-                           obj = check_pac_pos(pac.x,pac.y + step,pac.r,a,ctx2);
-                           if (!obj.bool) {
-                                clear_pac(pac,ctx2);
-                                pac.y += step;
-                                pac = draw_pac(pac,null,null,ctx2);
-                           } else {
-                               coord = get_block_coord(obj.row,obj.col);
-                               if (map[obj.row][obj.col] == 1) {
-                               if ((pac.x >= coord.x1)&&(pac.x <= coord.x2)) {
-                                   micro_step = coord.y1 - pac.r - pac.y + 2;
-                                   clear_pac(pac, ctx2);
-                                   pac.y += micro_step;
-                                   pac = draw_pac(pac,null,null,ctx2);
-                               }
-                               } else if (map[obj.row][obj.col] == 2) {
-                                   
-                               }
-                           }
-                       }  else if (curr_direction != "down") {
-                            pac.direction = "down";
-                            count = 1;
-                       } else {
-                            count++;
-                       }
-                   }
-                   break;
-           }  
-        }
+            ctx1 = document.getElementById("ctx1").getContext("2d");
+            ctx1.canvas.width = window.innerWidth - 10;
+            ctx1.canvas.height = window.innerHeight - 10;
+            ctx1.beginPath();
+            ctx1.fillStyle = "black";
+            ctx1.rect(0, 0, window.innerWidth, window.innerHeight);
+            ctx1.fill();
+
+            ctx2 = document.getElementById("ctx2").getContext("2d");
+            ctx2.canvas.width = window.innerWidth - 10;
+            ctx2.canvas.height = window.innerHeight - 10;
+            draw_map(ctx2, map);
+
+            ctx3 = document.getElementById("ctx3").getContext("2d");
+            ctx3.canvas.width = window.innerWidth - 10;
+            ctx3.canvas.height = window.innerHeight - 10;
+
+            game = true;
+            draw_pac(pac, "yellow", ctx2);
+
+            draw_ghost(red_Ghost, red_Ghost.color, ctx3);
+            let indexes = get_ghost_block(red_Ghost,map,a);
+            animationID = setInterval(loop, 1000.0 / 30.0);
         }
 
-        </script>
-    </body>
+        init();    
+
+        window.onkeydown = function (event) {
+            if (game) {
+                switch (event.keyCode) {
+                    case 37:
+                        if ((pac.x - 70) > 0) {
+                            if ((pac.direction == "left") && (count >= range)) {
+                                count = 0;
+                                obj = check_pac_pos(pac.x - step, pac.y, pac.r, a, step, ctx2);
+                                if (!obj.bool) {
+                                    clear_pac(pac, ctx2);
+                                    pac.x -= step;
+                                    pac = draw_pac(pac, null, ctx2);
+                                } else {
+                                    coord = get_block_coord(obj.row, obj.col, a);
+                                    if (map[obj.row][obj.col] == 1) {
+                                        micro_step = pac.x - coord.x2 - pac.r - 3;
+                                        if (micro_step > 0) {
+                                            clear_pac(pac, ctx2);
+                                            pac.x -= micro_step;
+                                            pac = draw_pac(pac, null, ctx2);
+                                        }
+                                    }
+                                }
+                            } else if (pac.direction != "left") {
+                                pac.direction = "left";
+                                count = 1;
+                            } else {
+                                count++;
+                            }
+                            if (ghosts_vs_pac(pac)) {
+                                clearInterval(animationID);
+                            }
+                        }
+                        break;
+                    case 38:
+                        if ((pac.y - 70) > 0) {
+                            if ((pac.direction == "up") && (count >= range)) {
+                                count = 0;
+                                obj = check_pac_pos(pac.x, pac.y - step, pac.r, a, step, ctx2);
+                                if (!obj.bool) {
+                                    clear_pac(pac, ctx2);
+                                    pac.y -= step;
+                                    pac = draw_pac(pac, null, ctx2);
+                                } else {
+                                    coord = get_block_coord(obj.row, obj.col, a);
+                                    if (map[obj.row][obj.col] == 1) {
+                                        micro_step = pac.y - coord.y2 - pac.r - 3;
+                                        if (micro_step > 0) {
+                                            clear_pac(pac, ctx2);
+                                            pac.y -= micro_step;
+                                            pac = draw_pac(pac, null, ctx2);
+                                        }
+                                    } 
+                                }
+                            } else if (pac.direction != "up") {
+                                pac.direction = "up";
+                                count = 1;
+                            } else {
+                                count++;
+                            }
+                            if (ghosts_vs_pac(pac)) {
+                                clearInterval(animationID);
+                            }
+                        }
+                        break;
+                    case 39:
+                        if ((pac.x + 70) < ctx2.canvas.width) {
+                            if ((pac.direction == "right") && (count >= range)) {
+                                count = 0;
+                                obj = check_pac_pos(pac.x + step, pac.y, pac.r, a, step, ctx2);
+                                if (!obj.bool) {
+                                    clear_pac(pac, ctx2);
+                                    pac.x += step;
+                                    pac = draw_pac(pac, null, ctx2);
+                                } else {
+                                    coord = get_block_coord(obj.row, obj.col, a);
+                                    if (map[obj.row][obj.col] == 1) {
+                                        micro_step = coord.x1 - pac.r - pac.x - 3;
+                                        if (micro_step > 0) {
+                                            clear_pac(pac, ctx2);
+                                            pac.x += micro_step;
+                                            pac = draw_pac(pac, null, ctx2);
+                                        }
+                                    } 
+                                }
+                            } else if (pac.direction != "right") {
+                                pac.direction = "right";
+                                count = 1;
+                            } else {
+                                count++;
+                            }
+                            if (ghosts_vs_pac(pac)) {
+                                clearInterval(animationID);
+                            }
+                        }
+                        break;
+                    case 40:
+                        if ((pac.y + 70) < ctx2.canvas.height) {
+                            if ((pac.direction == "down") && (count >= range)) {
+                                count = 0;
+                                obj = check_pac_pos(pac.x, pac.y + step, pac.r, a, step, ctx2);
+                                if (!obj.bool) {
+                                    clear_pac(pac, ctx2);
+                                    pac.y += step;
+                                    pac = draw_pac(pac, null, ctx2);
+                                } else {
+                                    coord = get_block_coord(obj.row, obj.col, a);
+                                    if (map[obj.row][obj.col] == 1) {
+                                        micro_step = coord.y1 - pac.r - pac.y - 3;
+                                        if (micro_step > 0) {
+                                            clear_pac(pac, ctx2);
+                                            pac.y += micro_step;
+                                            pac = draw_pac(pac, null, ctx2);
+                                        }
+                                    } 
+                                }
+                            } else if (curr_direction != "down") {
+                                pac.direction = "down";
+                                count = 1;
+                            } else {
+                                count++;
+                            }
+                            if (ghosts_vs_pac(pac)) {
+                                clearInterval(animationID);
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+    </script>
+</body>
+
 </html>
