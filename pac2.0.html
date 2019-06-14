@@ -18,9 +18,11 @@
     <script>
 
         class Pac {
-            constructor(x, y, direction, color, state, r) {
+            constructor(x, y, block_y, block_x, direction, color, state, r) {
                 this.x = x;
                 this.y = y;
+                this.block_y = block_y;
+                this.block_x = block_x;
                 this.direction = direction;
                 this.color = color;
                 this.state = state;
@@ -52,8 +54,7 @@
         [0, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],
         [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 0, 1, 0, 0],
         [0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 0, 0, 2, 0, 1, 0, 0],
-        [0, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],
-        
+        [0, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 0, 0],        
         [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 1, 2, 2, 2, 2, 2, 2, 0, 1, 2, 0, 1, 0, 0],
         [0, 0, 1, 2, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 1, 0, 0],
         [0, 0, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 2, 0, 1, 2, 0, 1, 1, 1, 2, 0, 0, 2, 0, 1, 0, 0],
@@ -119,38 +120,6 @@
                 }
             }
             return ctx;
-        }
-
-        function check_ghost_pos(ghost, step, a) {
-            let coord, x, y;
-            for (let i = 0; i < map.length; i++) {
-                for (let j = 0; j < map[0].length; j++) {
-                    if (map[i][j] == 1) {
-                        coord = get_block_coord(i, j, a);
-                        if (((ghost.x + ghost.r - step) <= coord.x1) && ((ghost.x + ghost.r) >= coord.x1) && ((Math.abs(ghost.y - coord.y1) <= ghost.r) || (Math.abs(ghost.y - coord.y2) <= ghost.r))) {
-                            return true;
-                        }
-                        if (((Math.abs(ghost.x - coord.x1) <= ghost.r) || (Math.abs(ghost.x - coord.x2) <= ghost.r)) && ((ghost.y + ghost.r - step) <= coord.y1) && ((ghost.y + ghost.r) >= coord.y1)) {
-                            return true;
-                        }
-                        if (((ghost.x - ghost.r + step) >= coord.x2) && ((ghost.x - ghost.r) <= coord.x2) && ((Math.abs(ghost.y - coord.y1) <= ghost.r) || (Math.abs(ghost.y - coord.y2) <= ghost.r))) {
-                            return true;
-                        }
-                        if (((Math.abs(ghost.x - coord.x1) <= ghost.r) || (Math.abs(ghost.x - coord.x2) <= ghost.r)) && ((ghost.y - ghost.r + step) >= coord.y2) && ((ghost.y - ghost.r) <= coord.y2)) {
-                            return true;
-                        }
-
-                        if (ghost.y - ghost.r < 2 * a) {
-                            return true;
-                        }
-
-                        if (ghost.y + ghost.r > 21 * a + ghost.r) {
-                            return true;
-                        }
-                    } 
-                }
-            }
-            return false;
         }
 
         function draw_ghost(ghost, color, ctx) {
@@ -458,42 +427,258 @@
             }
         }
 
-        function check_pac_pos(x, y, r, a, step, ctx) {
-            let x1, y1, coord;
-            for (let i = 0; i < map.length; i++) {
-                for (let j = 0; j < map[0].length; j++) {
-                    if (map[i][j] == 1) {
-                        coord = get_block_coord(i, j, a);
+        function get_block_pos(y, x, a) {
+            let block_y, block_x;
+            if ((y % a) == 0) {
+                block_y = y / a - 1;
+            } else {
+                block_y = Math.floor(y / a);
+            }
+            if ((x % a) == 0) {
+                block_x = x / a - 1;
+            } else {
+                block_x = Math.floor(x / a);
+            }
+            return {block_y, block_x};
+        }
 
-                        if ((Math.floor(x + r - step) <= coord.x1 - 1) && (Math.floor(x + r) >= coord.x1 - 1) && ((Math.abs(Math.floor(y - coord.y1)) <= r) || (Math.abs(Math.floor(y - coord.y2)) <= r))) {
-                            return { bool: true, row: i, col: j };
-                        }
-                        if (((Math.abs(Math.floor(x - coord.x2)) <= r) || (Math.abs(Math.floor(x - coord.x1)) <= r)) && (Math.floor(y + r - step) <= coord.y1 - 1) && (Math.floor(y + r) >= coord.y1 - 1)) {
-                            return { bool: true, row: i, col: j };
-                        }
-                        if ((Math.floor(x - r + step) >= coord.x2 + 1) && (Math.floor(x - r) <= coord.x2 + 1) && ((Math.abs(Math.floor(y - coord.y2)) <= r) || (Math.abs(Math.floor(y - coord.y1)) <= r))) {
-                            return { bool: true, row: i, col: j };
-                        }
-                        if (((Math.abs(Math.floor(x - coord.x2)) <= r) || (Math.abs(Math.floor(x - coord.x1)) <= r)) && (Math.floor(y - r + step) >= coord.y2 + 1) && (Math.floor(y - r) <= coord.y2 + 1)) {
-                            return { bool: true, row: i, col: j };
-                        }
-                        
-                    } else if (map[i][j] == 2) {
+        function check_pac_pos(pac, step, map, a, ctx, direction) {
+            let x1, y1, x2, y2, block_1, block_2, block_3, block_4, block_x, block_y, coords;
+            switch(direction) {
+                case 'left':
+                    x1 = pac.x - step - pac.r;
+                    y1 = pac.y - pac.r;
+                    x2 = pac.x - step + pac.r;
+                    y2 = pac.y + pac.r;
+                break;
+                case 'up':
+                    x1 = pac.x - pac.r;
+                    y1 = pac.y - step - pac.r;
+                    x2 = pac.x + pac.r;
+                    y2 = pac.y - step + pac.r;
+                break;
+                case 'right':
+                    x1 = pac.x + step - pac.r;
+                    y1 = pac.y - pac.r;
+                    x2 = pac.x + step + pac.r;
+                    y2 = pac.y + pac.r;
+                break;
+                case 'down':
+                    x1 = pac.x - pac.r;
+                    y1 = pac.y + step - pac.r;
+                    x2 = pac.x + pac.r;
+                    y2 = pac.y + step + pac.r;
+                break;
+            }
+            block_1 = get_block_pos(y1, x1, a);
+            block_2 = get_block_pos(y1, x2, a);
+            block_3 = get_block_pos(y2, x1, a);
+            block_4 = get_block_pos(y2, x2, a);
+            if (map[block_1.block_y][block_1.block_x] == 1) {
+                return {bool: true, row: block_1.block_y, col: block_1.block_x};
+            }
+            if (map[block_2.block_y][block_2.block_x] == 1) {
+                return {bool: true, row: block_2.block_y, col: block_2.block_x};
+            }
+            if (map[block_3.block_y][block_3.block_x] == 1) {
+                return {bool: true, row: block_3.block_y, col: block_3.block_x};
+            }
+            if (map[block_4.block_y][block_4.block_x] == 1) {
+                return {bool: true, row: block_4.block_y, col: block_4.block_x};
+            }
+            if (map[block_1.block_y - 1][block_1.block_x - 1] == 2) {
+                coords = get_block_coord(block_1.block_y - 1, block_1.block_x - 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
 
-                        coord = get_block_coord(i, j, a);
-                        x1 = coord.x1 + a;
-                        y1 = coord.y1 + a;
-
-                        if (Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)) <= 3 * r / 2) {
-                            map[i][j] = 0;
-                            draw_circle(coord.x1, coord.y1, r, "black", ctx);
-                            win_check();
-                        }
-
-                    }
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_1.block_y - 1][block_1.block_x - 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
                 }
             }
-            return { bool: false, row: -1, col: -1 };
+
+            if (map[block_1.block_y - 1][block_1.block_x] == 2) {
+                coords = get_block_coord(block_1.block_y - 1, block_1.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_1.block_y - 1][block_1.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_1.block_y][block_1.block_x - 1] == 2) {
+                coords = get_block_coord(block_1.block_y, block_1.block_x - 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_1.block_y][block_1.block_x - 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_1.block_y][block_1.block_x] == 2) {
+                coords = get_block_coord(block_1.block_y, block_1.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_1.block_y][block_1.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_2.block_y - 1][block_2.block_x] == 2) {
+                coords = get_block_coord(block_2.block_y - 1, block_2.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_2.block_y - 1][block_2.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_2.block_y - 1][block_2.block_x + 1] == 2) {
+                coords = get_block_coord(block_2.block_y + 1, block_2.block_x + 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_2.block_y - 1][block_2.block_x + 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_2.block_y][block_2.block_x] == 2) {
+                coords = get_block_coord(block_2.block_y, block_2.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_2.block_y][block_2.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_2.block_y][block_2.block_x + 1] == 2) {
+                coords = get_block_coord(block_2.block_y, block_2.block_x + 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_2.block_y][block_2.block_x + 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_3.block_y][block_3.block_x - 1] == 2) {
+                coords = get_block_coord(block_3.block_y, block_3.block_x - 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_3.block_y][block_1.block_x - 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_3.block_y][block_3.block_x] == 2) {
+                coords = get_block_coord(block_3.block_y, block_3.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_3.block_y][block_1.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_3.block_y + 1][block_3.block_x - 1] == 2) {
+                coords = get_block_coord(block_3.block_y + 1, block_3.block_x - 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_3.block_y + 1][block_3.block_x - 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_3.block_y + 1][block_3.block_x] == 2) {
+                coords = get_block_coord(block_3.block_y + 1, block_3.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_3.block_y + 1][block_3.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_4.block_y][block_4.block_x] == 2) {
+                coords = get_block_coord(block_4.block_y, block_4.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_4.block_y][block_4.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_4.block_y][block_4.block_x + 1] == 2) {
+                coords = get_block_coord(block_4.block_y, block_4.block_x + 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_4.block_y][block_4.block_x + 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_4.block_y + 1][block_4.block_y] == 2) {
+                coords = get_block_coord(block_4.block_y + 1, block_4.block_x, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_4.block_y + 1][block_4.block_x] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            if (map[block_4.block_y + 1][block_4.block_x + 1] == 2) {
+                coords = get_block_coord(block_4.block_y + 1, block_4.block_x + 1, a);
+                block_x = coords.x1 + a;
+                block_y = coords.y1 + a;
+
+                if (Math.sqrt(Math.pow(block_x - x1 - pac.r, 2) + Math.pow(block_y - y1 - pac.r, 2)) <= 3 * pac.r / 2) {
+                    map[block_4.block_y + 1][block_4.block_x + 1] = 0;
+                    draw_circle(coords.x1, coords.y1, pac.r, "black", ctx);
+                    win_check();
+                }
+            }
+
+            return {bool: false, row: -1, col: -1};
         }
 
         function draw_pac(pac, color, ctx) {
@@ -568,8 +753,7 @@
         function ghosts_vs_pac(pac) {
             if (ghost_vs_pac(pac, red_Ghost)) {
                 return true;
-            }
-            
+            }            
             if (ghost_vs_pac(pac, blue_Ghost)) {
                 return true;
             }
@@ -578,8 +762,7 @@
             }
             if (ghost_vs_pac(pac, violet_Ghost)) {
                 return true;
-            }
-            
+            }            
             return false;
         }
 
@@ -600,28 +783,20 @@
             move_ghost(violet_Ghost);
         }
 
+        function init() {            
+            r = (window.innerWidth - 10) / 65;
+            pac_r = r;
+            a = 1.3*r;
+            y = 23*a;
+            x = 25*a;
+            step = (window.innerWidth - 10) / 140;
 
-        function init() {
-            if (window.innerWidth > window.innerHeight) {
-                r = (window.innerWidth - 10) / 65;
-                pac_r = r;
-                a = 1.3*r;
-                y = (window.innerHeight - 10) - 1.205 * a;
-                x = (window.innerWidth - 10) / 2;
-                step = (window.innerWidth - 10) / 140;
-            } else {
-                r = (window.innerHeight - 10) / 60;
-                a = 1.2 * r;
-                y = (window.innerHeight - 10) - 1.2 * a;
-                x = (window.innerWidth - 10) / 2;
-                step = (window.innerHeight - 10) * 0.006;
-            }
             ghost_step = 3 * (step) / 10;
             ghost_r = a - 4;
             state = "open";
             curr_direction = "up";
-            pac = new Pac(x, y, "up", "yellow", "open", pac_r);
-            
+            pac = new Pac(x, y, 22, 24, "up", "yellow", "open", pac_r);
+
             red_Ghost = new Ghost(24 * a, 9 * a, 23, 8, ghost_step, "movement", "left", "red", ghost_r);
             blue_Ghost = new Ghost(27 * a, 9 * a, 26, 8, ghost_step, "movement", "right", "blue", ghost_r);
             brown_Ghost = new Ghost(24 * a, 12 * a, 23, 11, ghost_step, "movement", "left", "Sienna", ghost_r);
@@ -631,27 +806,25 @@
             range = 0;
             
             ctx1 = document.getElementById("ctx1").getContext("2d");
-            ctx1.canvas.width = window.innerWidth - 10;
-            ctx1.canvas.height = window.innerHeight - 10;
+            ctx1.canvas.width = window.innerWidth - 5;
+            ctx1.canvas.height = window.innerHeight - 5;
             ctx1.beginPath();
             ctx1.fillStyle = "black";
             ctx1.rect(0, 0, window.innerWidth, window.innerHeight);
             ctx1.fill();
 
             ctx2 = document.getElementById("ctx2").getContext("2d");
-            ctx2.canvas.width = window.innerWidth - 10;
-            ctx2.canvas.height = window.innerHeight - 10;
+            ctx2.canvas.width = window.innerWidth - 5;
+            ctx2.canvas.height = window.innerHeight - 5;
             draw_map(ctx2, map);
 
             ctx3 = document.getElementById("ctx3").getContext("2d");
-            ctx3.canvas.width = window.innerWidth - 10;
-            ctx3.canvas.height = window.innerHeight - 10;
+            ctx3.canvas.width = window.innerWidth - 5;
+            ctx3.canvas.height = window.innerHeight - 5;
 
             game = true;
             draw_pac(pac, "yellow", ctx2);
 
-            draw_ghost(red_Ghost, red_Ghost.color, ctx3);
-            let indexes = get_ghost_block(red_Ghost,map,a);
             animationID = setInterval(loop, 1000.0 / 30.0);
         }
 
@@ -661,10 +834,9 @@
             if (game) {
                 switch (event.keyCode) {
                     case 37:
-                        if ((pac.x - 70) > 0) {
                             if ((pac.direction == "left") && (count >= range)) {
                                 count = 0;
-                                obj = check_pac_pos(pac.x - step, pac.y, pac.r, a, step, ctx2);
+                                obj = check_pac_pos(pac, step, map, a, ctx2, "left");
                                 if (!obj.bool) {
                                     clear_pac(pac, ctx2);
                                     pac.x -= step;
@@ -689,13 +861,12 @@
                             if (ghosts_vs_pac(pac)) {
                                 clearInterval(animationID);
                             }
-                        }
                         break;
                     case 38:
-                        if ((pac.y - 70) > 0) {
+                        if ((pac.y - pac.r) > 0) {
                             if ((pac.direction == "up") && (count >= range)) {
                                 count = 0;
-                                obj = check_pac_pos(pac.x, pac.y - step, pac.r, a, step, ctx2);
+                                obj = check_pac_pos(pac, step, map, a, ctx2, "up");
                                 if (!obj.bool) {
                                     clear_pac(pac, ctx2);
                                     pac.y -= step;
@@ -723,10 +894,9 @@
                         }
                         break;
                     case 39:
-                        if ((pac.x + 70) < ctx2.canvas.width) {
                             if ((pac.direction == "right") && (count >= range)) {
                                 count = 0;
-                                obj = check_pac_pos(pac.x + step, pac.y, pac.r, a, step, ctx2);
+                                obj = check_pac_pos(pac, step, map, a, ctx2, "right");
                                 if (!obj.bool) {
                                     clear_pac(pac, ctx2);
                                     pac.x += step;
@@ -751,13 +921,12 @@
                             if (ghosts_vs_pac(pac)) {
                                 clearInterval(animationID);
                             }
-                        }
                         break;
                     case 40:
-                        if ((pac.y + 70) < ctx2.canvas.height) {
+                        if ((pac.y + pac.r) < ctx2.canvas.height) {
                             if ((pac.direction == "down") && (count >= range)) {
                                 count = 0;
-                                obj = check_pac_pos(pac.x, pac.y + step, pac.r, a, step, ctx2);
+                                obj = check_pac_pos(pac, step, map, a, ctx2, "down");
                                 if (!obj.bool) {
                                     clear_pac(pac, ctx2);
                                     pac.y += step;
