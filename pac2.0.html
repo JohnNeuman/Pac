@@ -474,6 +474,7 @@
             block_2 = get_block_pos(y1, x2, a);
             block_3 = get_block_pos(y2, x1, a);
             block_4 = get_block_pos(y2, x2, a);
+            /*
             if (map[block_1.block_y][block_1.block_x] == 1) {
                 return {bool: true, row: block_1.block_y, col: block_1.block_x};
             }
@@ -486,6 +487,15 @@
             if (map[block_4.block_y][block_4.block_x] == 1) {
                 return {bool: true, row: block_4.block_y, col: block_4.block_x};
             }
+            */
+            for(let i = block_1.block_y; i <= block_3.block_y; i++) {
+                for(let j = block_1.block_x; j <= block_4.block_x; j++) {
+                    if (map[i][j] === 1) {
+                        return {bool: true, row: i, col: j};
+                    }
+                }
+            }
+
             if (map[block_1.block_y - 1][block_1.block_x - 1] == 2) {
                 coords = get_block_coord(block_1.block_y - 1, block_1.block_x - 1, a);
                 block_x = coords.x1 + a;
@@ -777,10 +787,10 @@
         }
 
         function loop() {
-            move_ghost(red_Ghost);
-            move_ghost(blue_Ghost);
-            move_ghost(brown_Ghost);
-            move_ghost(violet_Ghost);
+           // move_ghost(red_Ghost);
+           // move_ghost(blue_Ghost);
+           // move_ghost(brown_Ghost);
+            //move_ghost(violet_Ghost);
         }
 
         function init() {            
